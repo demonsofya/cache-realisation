@@ -38,27 +38,31 @@ template <typename T, typename KeyT = size_t> struct lfu_cache_t {
           break;
       }
 
-      size_t freq = ++(curr_it->second);
+      ++(curr_it->second);
 
-      auto next_it = curr_it;
-      next_it++;
-
-      while (next_it->second < freq && next_it != counter_.end())
+      auto next_it = std::next(curr_it);
+      while (next_it != counter_.end() && next_it->second < curr_it->second)
         next_it++;
 
-      if (next_it != counter_.end()) {
+      counter_.splice(next_it, counter_, curr_it);
 
-        ON_DEBAG(std::cout << "Founded element " << curr_it->first
-                           << "and swaped it with " << next_it->first << "\n";
-                 print_cache(););
+      ON_DEBAG(std::cout << "Founded element " << curr_it->first;
+               print_cache(););
 
-        std::swap(curr_it, next_it); // сортируем так чтобы было как надо,
-                                     // просто свапаем тк разница максимум 1
-      } else {
+      // if (next_it != counter_.end()) {
 
-        ON_DEBAG(std::cout << "Founded element " << curr_it->first
-                           << " and didnt swaped\n");
-      }
+      //   ON_DEBAG(std::cout << "Founded element " << curr_it->first
+      //                      << "and swaped it with " << next_it->first <<
+      //                      "\n";
+      //            print_cache(););
+
+      //   std::swap(curr_it, next_it); // сортируем так чтобы было как надо,
+      //                                // просто свапаем тк разница максимум 1
+      // } else {
+
+      //   ON_DEBAG(std::cout << "Founded element " << curr_it->first
+      //                      << " and didnt swaped\n");
+      // }
 
       return true;
     }
@@ -190,7 +194,7 @@ template <typename T, typename KeyT = size_t> struct lru_cache_t {
 
   std::list<std::pair<KeyT, T>> counter_; // сортируем чтобы в начале лежал
   // тот, который хотим удалить
-  using CounterIter = typename std::list<std::pair<KeyT, size_t>>::iterator;
+  using CounterIter = typename std::list<std::pair<KeyT, T>>::iterator;
 
   std::unordered_map<KeyT, CounterIter> cache_; // похуй на сортировку
 };
