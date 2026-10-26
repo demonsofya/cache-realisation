@@ -72,7 +72,7 @@ using CacheTypes = testing::Types<lru_cache_t<int, int>, lfu_cache_t<int, int>,
                                   twoq_cache_t<int, int>, arc_cache_t<int, int>,
                                   lirs_cache_t<int, int>>;
 
-TYPED_TEST_SUITE(common_cache_test_t, CacheTypes);
+TYPED_TEST_CASE(common_cache_test_t, CacheTypes);
 
 TYPED_TEST(common_cache_test_t, CommonTests) {
   for (const auto &test : common_tests) {
@@ -116,13 +116,8 @@ TYPED_TEST(common_cache_test_t, SmallCapacities) {
 
     TypeParam cache(capacity);
 
-    size_t hits = 0;
-    size_t slow_calls = 0;
-
-    auto slow_get 
-
     for (int i = 0; i < 100; i++) {
-      if(cache.lookup_update(i % 10, slow_get_value)) hits++;
+      cache.lookup_update(i % 10, slow_get_value);
     }
   }
 
