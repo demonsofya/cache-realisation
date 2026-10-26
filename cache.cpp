@@ -23,7 +23,7 @@ int main() {
   lru_cache_t<size_t> cache_lru(cache_sz);
 
   size_t hits_lfu = 0, hits_lru = 0;
-  for (int i = 0; i < data_count; i++) {
+  for (size_t i = 0; i < data_count; i++) {
     KeyT key;
     std::cin >> key;
 
