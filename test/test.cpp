@@ -15,6 +15,7 @@ struct cache_test_case_t {
     size_t expected_hits;
 };
 
+// FIXME: it's not a good idea to create global variables which constructor allocates resources
 const std::vector<cache_test_case_t> common_tests = {
     {"zero capacity", 0, {1, 1, 1}, 0},
 
@@ -59,6 +60,8 @@ size_t run_cache(size_t capacity, const std::vector<int> &data) {
     size_t hits = 0;
 
     for (auto key : data) {
+        // FIXME: nit: hits += cache.lookup_update(key, slow_get_value);
+        // The same applies for all similar if statements below
         if (cache.lookup_update(key, slow_get_value))
             hits++;
     }
@@ -66,6 +69,8 @@ size_t run_cache(size_t capacity, const std::vector<int> &data) {
     return hits;
 }
 
+// FIXME: if you look in the gtest documentation, you'll see that neither fixture name nor test name
+// may contain underscores (https://google.github.io/googletest/reference/testing.html)
 template <typename T>
 class common_cache_test_t : public testing::Test {};
 
@@ -73,6 +78,7 @@ using CacheTypes =
     testing::Types<lru_cache_t<int, int>, lfu_cache_t<int, int>, twoq_cache_t<int, int>,
                    arc_cache_t<int, int>, lirs_cache_t<int, int>>;
 
+// FIXME: this is deprecated legacy API
 TYPED_TEST_CASE(common_cache_test_t, CacheTypes);
 
 TYPED_TEST(common_cache_test_t, CommonTests) {
@@ -112,6 +118,7 @@ TYPED_TEST(common_cache_test_t, LongRepeatedElement) {
     EXPECT_EQ(hits, 999);
 }
 
+// FIXME: what is the purpose of this test if it always succeeds?
 TYPED_TEST(common_cache_test_t, SmallCapacities) {
     for (size_t capacity = 0; capacity <= 5; capacity++) {
 
@@ -128,7 +135,7 @@ TYPED_TEST(common_cache_test_t, SmallCapacities) {
 /*
  * 2Q specific tests
  */
-
+// FIXME: consider moving 2Q-specific tests to a separate file
 TEST(twoq_cache_test_t, ElementStaysInA1inOnHit) {
     twoq_cache_t<int, int> cache(4);
 
@@ -136,6 +143,7 @@ TEST(twoq_cache_test_t, ElementStaysInA1inOnHit) {
 
     EXPECT_TRUE(cache.lookup_update(1, slow_get_value));
 
+    // FIXME: seems like here you access members meant to be private
     EXPECT_TRUE(cache.a1in_cache_.find(1) != cache.a1in_cache_.end());
 
     EXPECT_TRUE(cache.am_cache_.cache_.find(1) == cache.am_cache_.cache_.end());
@@ -198,7 +206,7 @@ TEST(twoq_cache_test_t, ResidentSizeDoesNotExceedCapacity) {
 /*
  * ARC specific tests
  */
-
+// FIXME: consider moving ARC-specific tests to a separate file
 TEST(arc_cache_test_t, NewElementGoesToT1) {
     arc_cache_t<int, int> cache(4);
 
@@ -322,6 +330,7 @@ TEST(arc_cache_test_t, PDoesNotExceedCapacity) {
     }
 }
 
+// FIXME: you do not need to write main function for google tests, just link with gtest_main
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
 

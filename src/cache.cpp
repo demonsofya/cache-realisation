@@ -1,3 +1,6 @@
+// FIXME: what is the purpose of this file?
+
+// FIXME: some of the included headers are not used
 #include <cctype>
 #include <cstddef>
 #include <iostream>
@@ -12,11 +15,13 @@ using KeyT = size_t;
 size_t slow_get_value(KeyT key) {
 
     return key; // cause its not really important how is testing works
+    // FIXME: "how is testing works" -> "how does testing work"
 }
 
+// FIXME: add function try catch block on main
 int main() {
     size_t cache_sz = 0, data_count = 0;
-    std::cin >> cache_sz >> data_count;
+    std::cin >> cache_sz >> data_count; // FIXME: check std::cin.fail()
 
     lfu_cache_t<size_t> cache_lfu(cache_sz);
     lru_cache_t<size_t> cache_lru(cache_sz);
@@ -30,6 +35,7 @@ int main() {
     for (size_t i = 0; i < data_count; i++) {
         KeyT key;
         std::cin >> key;
+        // FIXME: check std::cin.fail()
 
         if (cache_lfu.lookup_update(key, slow_get_value))
             hits_lfu++;
