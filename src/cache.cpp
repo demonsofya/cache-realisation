@@ -68,5 +68,29 @@ int main() {
               << "IDEAL hits: " << hits_ideal << "\n"
               << "IDEAL misses: " << data_count - hits_ideal << "\n";
 
+    const size_t l1_capacity = cache_sz / 3;
+    const size_t l2_capacity = cache_sz - l1_capacity;
+    size_t hits_l1 = 0, hits_l2 = 0;
+    size_t memory_accesses = data_count;
+
+    // with l1_capacity = 0 it is not a multilevel cache
+    if (l1_capacity > 0) {
+        lru_cache_t<size_t> l1(l1_capacity);
+        lfu_cache_t<size_t> l2(l2_capacity);
+        multilevel_cache_t cache_multilevel(l1, l2);
+
+        for (auto key : data)
+            cache_multilevel.lookup_update(key, slow_get_value);
+
+        hits_l1 = cache_multilevel.hits_l1_;
+        hits_l2 = cache_multilevel.hits_l2_;
+        memory_accesses = cache_multilevel.memory_accesses_;
+
+        std::cout << "Multilevel L1 (LRU) capacity: " << l1_capacity << "\n"
+                  << "Multilevel L2 (LFU) capacity: " << l2_capacity << "\n"
+                  << "L1 hits: " << hits_l1 << "\n"
+                  << "L2 hits: " << hits_l2 << "\n";
+    }
+
     return 0;
 }
