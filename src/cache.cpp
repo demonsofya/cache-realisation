@@ -13,29 +13,26 @@
         return 0;                                                                                  \
     }
 
-#define TRY_CIN(num, ...)                                                                          \
-    if (__VA_ARGS__ != num) {                                                                      \
-        std::cin.clear();                                                                          \
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');                        \
-        std::cout << "Inpur error, please try again\n";                                            \
-    }
-
 using KeyT = size_t;
-
 size_t slow_get_value(KeyT key) {
 
     return key; // cause its not really important how does testing work
-    // FIXME: "how is testing works" -> "how does testing work"
-    // DONE
 }
 
 // FIXME: add function try catch block on main
 int main() {
     size_t cache_sz = 0, data_count = 0;
-    // TRY_CIN(2, cache_sz, data_count);
-    std::cin >> cache_sz >> data_count; // FIXME: check std::cin.fail()
+    if (!(std::cin >> cache_sz >> data_count))
+        return 1;
 
-    // RETURN_IF_CIN_ERROR;
+    std::vector<KeyT> data(data_count);
+    for (auto &key : data) {
+        if (!(std::cin >> key))
+            return 1;
+    }
+    // FIXME: check std::cin.fail()
+
+    size_t hits_ideal = ideal_cache_hits(data, cache_sz);
 
     lfu_cache_t<size_t> cache_lfu(cache_sz);
     lru_cache_t<size_t> cache_lru(cache_sz);
@@ -46,13 +43,7 @@ int main() {
     size_t hits_lfu = 0, hits_lru = 0;
     size_t hits_twoq = 0, hits_arc = 0, hits_lirs = 0;
 
-    for (size_t i = 0; i < data_count; i++) {
-        KeyT key;
-        std::cin >> key;
-
-        // RETURN_IF_CIN_ERROR;
-        // FIXME: check std::cin.fail()
-
+    for (auto key : data) {
         if (cache_lfu.lookup_update(key, slow_get_value))
             hits_lfu++;
 
@@ -73,7 +64,9 @@ int main() {
               << "LRU hits: " << hits_lru << "\n"
               << "2Q hits: " << hits_twoq << "\n"
               << "ARC hits: " << hits_arc << "\n"
-              << "LIRS hits: " << hits_lirs << "\n";
+              << "LIRS hits: " << hits_lirs << "\n"
+              << "IDEAL hits: " << hits_ideal << "\n"
+              << "IDEAL misses: " << data_count - hits_ideal << "\n";
 
     return 0;
 }

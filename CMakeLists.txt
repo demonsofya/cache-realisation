@@ -15,13 +15,15 @@ find_package(GTest 1.14 CONFIG REQUIRED)
 add_library(cache_headers INTERFACE)
 target_include_directories(cache_headers INTERFACE "include")
 
-add_executable(cache src/cache.cpp)
+add_executable(cache src/ideal_cache.cpp src/cache.cpp)
 target_link_libraries(cache PRIVATE cache_headers)
 
 add_executable(cache_tests
     test/common_tests.cpp
     test/twoq_tests.cpp
     test/arc_tests.cpp
+    test/ideal_tests.cpp
+    src/ideal_cache.cpp
 )
 
 target_link_libraries(cache_tests PRIVATE
