@@ -18,6 +18,9 @@ target_include_directories(cache_headers INTERFACE "include")
 add_executable(cache src/ideal_cache.cpp src/cache.cpp)
 target_link_libraries(cache PRIVATE cache_headers)
 
+add_executable(cache_runner src/cache_runner.cpp src/cache_hierarchy.cpp)
+target_link_libraries(cache_runner PRIVATE cache_headers)
+
 add_executable(cache_tests
     test/common_tests.cpp
     test/twoq_tests.cpp

@@ -1,0 +1,170 @@
+[
+  {
+    "name": "EmptyInput",
+    "description": "Empty request stream",
+    "capacity": 6,
+    "file": "EmptyInput_6.txt",
+    "requests": 0
+  },
+  {
+    "name": "ZeroCapacity",
+    "description": "Cache disabled: zero capacity",
+    "capacity": 0,
+    "file": "ZeroCapacity_0.txt",
+    "requests": 6
+  },
+  {
+    "name": "CapacityOne",
+    "description": "Repeated accesses with capacity one",
+    "capacity": 1,
+    "file": "CapacityOne_1.txt",
+    "requests": 9
+  },
+  {
+    "name": "CapacityTwo",
+    "description": "Three keys competing for two slots",
+    "capacity": 2,
+    "file": "CapacityTwo_2.txt",
+    "requests": 9
+  },
+  {
+    "name": "SmallestMultilevel",
+    "description": "Smallest two-level cache",
+    "capacity": 3,
+    "file": "SmallestMultilevel_3.txt",
+    "requests": 10
+  },
+  {
+    "name": "CapacityNotDivisibleByThree",
+    "description": "Cache capacity not divisible by three",
+    "capacity": 5,
+    "file": "CapacityNotDivisibleByThree_5.txt",
+    "requests": 14
+  },
+  {
+    "name": "HotKeysAndScans",
+    "description": "Popular keys between sequential scans",
+    "capacity": 6,
+    "file": "HotKeysAndScans_6.txt",
+    "requests": 30
+  },
+  {
+    "name": "WorkingSetFits",
+    "description": "Working set fits in the cache",
+    "capacity": 9,
+    "file": "WorkingSetFits_9.txt",
+    "requests": 18
+  },
+  {
+    "name": "ChangingWorkingSet",
+    "description": "Alternating working sets",
+    "capacity": 6,
+    "file": "ChangingWorkingSet_6.txt",
+    "requests": 24
+  },
+  {
+    "name": "UniqueKeys",
+    "description": "One-time accesses to unique data",
+    "capacity": 12,
+    "file": "UniqueKeys_12.txt",
+    "requests": 16
+  },
+  {
+    "name": "RepeatedData",
+    "description": "Repeated data: revisiting the same three pages",
+    "capacity": 6,
+    "file": "RepeatedData_6.txt",
+    "requests": 90
+  },
+  {
+    "name": "FrequentlyAccessedItem",
+    "description": "Frequently accessed item among new pages",
+    "capacity": 6,
+    "file": "FrequentlyAccessedItem_6.txt",
+    "requests": 102
+  },
+  {
+    "name": "CatalogScanAndFavorites",
+    "description": "Browsing a catalog and returning to favorites",
+    "capacity": 9,
+    "file": "CatalogScanAndFavorites_9.txt",
+    "requests": 146
+  },
+  {
+    "name": "SequentialReading",
+    "description": "Sequential reading without revisits",
+    "capacity": 12,
+    "file": "SequentialReading_12.txt",
+    "requests": 120
+  },
+  {
+    "name": "CyclicWorkingSetExceedsCache",
+    "description": "Cycling through seven pages with capacity six",
+    "capacity": 6,
+    "file": "CyclicWorkingSetExceedsCache_6.txt",
+    "requests": 140
+  },
+  {
+    "name": "SwitchingInterests",
+    "description": "Switching interests: previously popular data is no longer needed",
+    "capacity": 6,
+    "file": "SwitchingInterests_6.txt",
+    "requests": 300
+  },
+  {
+    "name": "ReturningToPreviousProject",
+    "description": "Switching projects and returning to the previous one",
+    "capacity": 6,
+    "file": "ReturningToPreviousProject_6.txt",
+    "requests": 180
+  },
+  {
+    "name": "ShortBurstsOfNewData",
+    "description": "Short bursts: access an item repeatedly, then move on",
+    "capacity": 6,
+    "file": "ShortBurstsOfNewData_6.txt",
+    "requests": 200
+  },
+  {
+    "name": "MovingWorkingWindow",
+    "description": "Scrolling with revisits: a gradually moving working window",
+    "capacity": 6,
+    "file": "MovingWorkingWindow_6.txt",
+    "requests": 240
+  },
+  {
+    "name": "PopularitySkewWithLongTail",
+    "description": "Popular pages and a long tail of rare requests",
+    "capacity": 6,
+    "file": "PopularitySkewWithLongTail_6.txt",
+    "requests": 1000
+  },
+  {
+    "name": "PopularitySkewWithLongTail",
+    "description": "Popular pages and a long tail of rare requests",
+    "capacity": 12,
+    "file": "PopularitySkewWithLongTail_12.txt",
+    "requests": 1000
+  },
+  {
+    "name": "PopularitySkewWithLongTail",
+    "description": "Popular pages and a long tail of rare requests",
+    "capacity": 24,
+    "file": "PopularitySkewWithLongTail_24.txt",
+    "requests": 1000
+  },
+  {
+    "name": "UniformRandomRequests",
+    "description": "Random requests with roughly equal page popularity",
+    "capacity": 12,
+    "file": "UniformRandomRequests_12.txt",
+    "requests": 1000
+  },
+  {
+    "name": "InterleavedUserSessions",
+    "description": "Interleaved sessions: a regular user and new visitors",
+    "capacity": 9,
+    "file": "InterleavedUserSessions_9.txt",
+    "requests": 300
+  }
+]
