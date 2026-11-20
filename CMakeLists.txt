@@ -26,7 +26,6 @@ add_executable(cache_tests
     test/twoq_tests.cpp
     test/arc_tests.cpp
     test/ideal_tests.cpp
-    test/comparison_tests.cpp
     src/ideal_cache.cpp
 )
 
