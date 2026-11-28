@@ -51,11 +51,35 @@ class CacheRunnerTests(unittest.TestCase):
             self.assertEqual(self.run_cache('1 LRU', '2 4 1 2 1 2',
                                            json_output=False, stdin=stdin), '2\n')
 
-    def test_previous_independent_result(self):
+    def test_exclusive_result(self):
         data = '1 2 1 2 1 2 3 4 5 6 7 8 1 2 1 2 1 2 9 10 11 12 13 14 1 2 1 2 1 2'
         stats = self.run_cache('2 LRU LFU', '6 30 ' + data)
-        self.assertEqual(stats['hits'], 16)
-        self.assertEqual([level['hits'] for level in stats['levels']], [12, 4])
+        self.assertEqual(stats['hits'], 14)
+        self.assertEqual([level['hits'] for level in stats['levels']], [12, 2])
+
+    def test_exclusive_lru_matches_global_recency(self):
+        generator = random.Random(42)
+        data = [generator.randrange(50) for _ in range(500)]
+        for capacities in ([2, 4], [1, 3, 7], [1] * 12):
+            recency = []
+            expected = [0] * len(capacities)
+            total = sum(capacities)
+            for key in data:
+                if key in recency:
+                    position = recency.index(key)
+                    boundary = 0
+                    for level, capacity in enumerate(capacities):
+                        boundary += capacity
+                        if position < boundary:
+                            expected[level] += 1
+                            break
+                    recency.remove(key)
+                recency.insert(0, key)
+                del recency[total:]
+            stats = self.run_cache(str(len(capacities)) + ' LRU' * len(capacities),
+                                   f'{total} {len(data)} ' + ' '.join(map(str, data)),
+                                   ['--sizes', ','.join(map(str, capacities))])
+            self.assertEqual([level['hits'] for level in stats['levels']], expected)
 
     def test_distribution_options(self):
         for options, expected in [([], [3, 6, 12]),

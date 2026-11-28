@@ -7,6 +7,7 @@
 #include <list>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 
 // #define DEBUG
 
@@ -15,3 +16,9 @@
 #else
 #define ON_DEBAG(...)
 #endif
+
+// Receives a resident key when insertion evicts it.
+struct ignore_eviction_t {
+    template <typename KeyT>
+    void operator()(const KeyT &) const {}
+};

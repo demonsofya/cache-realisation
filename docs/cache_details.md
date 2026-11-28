@@ -153,19 +153,28 @@ For N requests and capacity C, the implementation has expected O(N) preprocessin
 
 ## Cache hierarchies
 
-Code: [cache_hierarchy.hpp](../include/cache_hierarchy.hpp), [level adapter](https://github.com/demonsofya/cache-realisation/blob/8d147bb2a0cd85d7b0bb9c708c190fb93a5bead6/src/cache_hierarchy.cpp#L12), [request loop](https://github.com/demonsofya/cache-realisation/blob/8d147bb2a0cd85d7b0bb9c708c190fb93a5bead6/src/cache_hierarchy.cpp#L45) and [size distribution](https://github.com/demonsofya/cache-realisation/blob/8d147bb2a0cd85d7b0bb9c708c190fb93a5bead6/src/cache_runner.cpp#L66).
+Code: [cache_hierarchy.hpp](../include/cache_hierarchy.hpp),
+[cache_hierarchy.cpp](../src/cache_hierarchy.cpp).
 
-`cache_hierarchy_t` stores a vector of `unique_ptr<level_t>`. Each `level_impl_t<Cache>` owns one concrete cache and exposes the same virtual lookup method. Growing the vector moves pointers, not cache objects with stored list iterators.
+The hierarchy owns policy adapters through `unique_ptr<level_t>`. A request first
+probes resident presence with `contains`. An L1 hit updates local replacement
+state. A lower-level hit is erased from its source, then inserted into L1. A full
+miss increments the memory counter and inserts into L1. Eviction callbacks report
+the resident victim to insert into the next level. Transfers do not count as user
+requests. Only a victim leaving the final level is discarded.
 
-The request loop visits levels in order. The first hit stops the loop. Every visited miss updates that level using its own policy. If all levels miss, `memory_accesses_` increases once.
+Exclusivity applies to resident values. Ghost metadata may mention a key resident
+elsewhere. `erase` removes the promoted object without making a new ghost.
+The destination uses its own admission rules; LFU counts start at 1.
+ARC skips replacement if a free resident slot exists. LIRS maintains its LIR count
+on removal and demotes only when the LIR target would be exceeded.
 
-The adapter returns the key as its value. This allows a missed upper level to insert immediately, before lower levels are checked. This is valid for the project's independent-level, value-equals-key simulation; it is not a general data-loading API.
+The two-level `multilevel_cache_t` wrapper also uses exclusive placement. It
+requires initially empty referenced caches, positive L1 capacity smaller than L2,
+and access through the wrapper for its lifetime. Both interfaces simulate values
+using their keys, rather than moving arbitrary payloads.
 
-Copies may exist at multiple levels. There is no strict inclusion rule, no exclusive placement rule, and no automatic transfer of evicted objects to lower levels. L1 hits do not update L2 frequency or recency.
-
-The runner supports equal, linear and geometric weights, plus explicit sizes. The last level receives the rounding remainder. Multi-level allocations with an empty level are rejected. See [hierarchy settings](hierarchy.md).
-
-The older [multilevel_cache_t](../include/multilevel_cache.hpp), used by the demo, instead holds references to exactly two caches and chains their loaders. It requires L1 capacity to be smaller than L2. The runner uses the dynamic hierarchy, not this wrapper.
+See [hierarchy.md](hierarchy.md) for allocation and examples.
 
 ## Where correctness is checked
 
@@ -173,6 +182,7 @@ The older [multilevel_cache_t](../include/multilevel_cache.hpp), used by the dem
 - [twoq_tests.cpp](../test/twoq_tests.cpp): queue movement and resident/history sizes.
 - [arc_tests.cpp](../test/arc_tests.cpp): list movement, target changes and size limits.
 - [ideal_tests.cpp](../test/ideal_tests.cpp): exhaustive small cases against a separate recursive minimum-miss calculation.
+- [hierarchy_tests.cpp](../test/hierarchy_tests.cpp): exclusive placement, victim transfers and all 125 policy triples.
 - [test_cache_runner.py](../scripts/test_cache_runner.py): input/output checks and an independent Python LRU hierarchy.
 - [compare_caches.py](../scripts/compare_caches.py): comparison tables, IDEAL bounds and counter checks.
 

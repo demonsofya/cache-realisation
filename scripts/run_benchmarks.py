@@ -71,7 +71,7 @@ def main():
             rows.append({
                 'requests_file': str(request),
                 'config': str(config),
-                'mode': 'independent',
+                'mode': 'exclusive',
                 'distribution': 'explicit' if args.sizes else args.distribution,
                 'ratio': args.ratio if not args.sizes and args.distribution == 'geometric' else '',
                 'level_sizes': ' / '.join(str(level['capacity']) for level in stats['levels']),

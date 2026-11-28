@@ -9,8 +9,8 @@ struct lirs_cache_t {
         : capacity_(capacity), lhirs_(capacity == 0 ? 0 : std::max<size_t>(1, capacity / 4)),
           llirs_(capacity_ - lhirs_) {}
 
-    template <typename F>
-    bool lookup_update(KeyT key, F slow_get_value) {
+    template <typename F, typename OnEvict = ignore_eviction_t>
+    bool lookup_update(KeyT key, F slow_get_value, OnEvict on_evict = {}) {
 
         if (capacity_ == 0)
             return false;
@@ -39,8 +39,8 @@ struct lirs_cache_t {
             }
 
             // all other new elements are resident HIR
-            if (queue_.size() == lhirs_)
-                evict_hir();
+            if (size_ == capacity_)
+                evict_hir(on_evict);
 
             cache_[key] = value;
 
@@ -88,7 +88,8 @@ struct lirs_cache_t {
                 stack_.splice(stack_.begin(), stack_, page.stack_iter_);
                 page.stack_iter_ = stack_.begin();
 
-                demote_bottom_lir();
+                if (lir_size_ > llirs_)
+                    demote_bottom_lir();
                 prune_stack();
 
             } else {
@@ -110,8 +111,8 @@ struct lirs_cache_t {
         // non-resident HIR hit in stack S: cache miss, but it becomes LIR
         T value = slow_get_value(key);
 
-        if (queue_.size() == lhirs_)
-            evict_hir();
+        if (size_ == capacity_)
+            evict_hir(on_evict);
 
         cache_[key] = value;
         page.status_ = LIR;
@@ -121,13 +122,42 @@ struct lirs_cache_t {
         stack_.splice(stack_.begin(), stack_, page.stack_iter_);
         page.stack_iter_ = stack_.begin();
 
-        demote_bottom_lir();
+        if (lir_size_ > llirs_)
+            demote_bottom_lir();
         prune_stack();
 
         ON_DEBAG(std::cout << "Slowly got non-resident HIR element " << key << "\n";
                  print_cache(););
 
         return false;
+    }
+
+    size_t capacity() const { return capacity_; }
+
+    bool contains(KeyT key) const { return cache_.contains(key); }
+
+    bool erase(KeyT key) {
+        if (!cache_.erase(key))
+            return false;
+        auto it = pages_.find(key);
+        const auto &page = it->second;
+        if (page.in_stack_)
+            stack_.erase(page.stack_iter_);
+        if (page.in_queue_)
+            queue_.erase(page.queue_iter_);
+        if (page.status_ == LIR)
+            lir_size_--;
+        pages_.erase(it);
+        size_--;
+        prune_stack();
+        return true;
+    }
+
+    std::vector<KeyT> resident_keys() const {
+        std::vector<KeyT> keys;
+        for (const auto &entry : cache_)
+            keys.push_back(entry.first);
+        return keys;
     }
 
     void print_cache() {
@@ -175,7 +205,8 @@ struct lirs_cache_t {
         typename std::list<KeyT>::iterator queue_iter_;
     };
 
-    void evict_hir() {
+    template <typename OnEvict>
+    void evict_hir(OnEvict on_evict) {
 
         if (queue_.empty())
             return;
@@ -187,6 +218,7 @@ struct lirs_cache_t {
         queue_.pop_back();
         page.in_queue_ = false;
 
+        on_evict(key);
         cache_.erase(key);
         size_--;
 

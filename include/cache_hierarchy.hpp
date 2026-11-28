@@ -16,7 +16,7 @@ struct cache_level_stats_t {
   size_t misses = 0;
 };
 
-// Read-only simulator: values equal keys; levels replace entries independently.
+// Exclusive read-only simulator: each resident key belongs to one level.
 class cache_hierarchy_t {
 public:
   explicit cache_hierarchy_t(const std::vector<cache_level_config_t> &config);
@@ -26,10 +26,12 @@ public:
 
   bool lookup_update(size_t key);
   const std::vector<cache_level_stats_t> &levels() const;
+  std::vector<size_t> resident_keys(size_t level) const;
   size_t requests() const;
   size_t memory_accesses() const;
 
 private:
+  void insert(size_t key);
   struct level_t;
   template <typename Cache> struct level_impl_t;
 

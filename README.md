@@ -37,7 +37,8 @@ Create `requests.txt` with total capacity, request count and keys:
 ```
 
 The output is the number of hits. The hierarchy splits capacity using weights `1, 2, 4, ...`.
-Levels replace entries independently and may contain duplicate keys.
+The hierarchy is exclusive: every resident key belongs to one level.
+A lower-level hit moves the object to L1; evicted objects move down.
 Use `--help` for other distributions, exact sizes, JSON output.
 See [hierarchy settings](docs/hierarchy.md) for examples and design details.
 

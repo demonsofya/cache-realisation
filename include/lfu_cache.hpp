@@ -9,8 +9,8 @@ struct lfu_cache_t {
 
     // ~lfu_cache_t() = default;
 
-    template <typename F>
-    bool lookup_update(KeyT key, F slow_get_value) {
+    template <typename F, typename OnEvict = ignore_eviction_t>
+    bool lookup_update(KeyT key, F slow_get_value, OnEvict on_evict = {}) {
 
         if (capacity_ == 0) {
             return false;
@@ -65,6 +65,7 @@ struct lfu_cache_t {
         }
 
         auto deliting_elem = counter_.begin();
+        on_evict(deliting_elem->first);
         cache_.erase(deliting_elem->first);
 
         *deliting_elem = {key, static_cast<size_t>(1)}; // canging counter_
@@ -73,6 +74,27 @@ struct lfu_cache_t {
         ON_DEBAG(std::cout << "Slowly got elem " << value << "\n"; print_cache(););
 
         return false;
+    }
+
+    size_t capacity() const { return capacity_; }
+
+    bool contains(KeyT key) const { return cache_.contains(key); }
+
+    bool erase(KeyT key) {
+        if (!cache_.erase(key))
+            return false;
+        auto it = std::find_if(counter_.begin(), counter_.end(),
+                               [&](const auto &entry) { return entry.first == key; });
+        counter_.erase(it);
+        size_--;
+        return true;
+    }
+
+    std::vector<KeyT> resident_keys() const {
+        std::vector<KeyT> keys;
+        for (const auto &entry : cache_)
+            keys.push_back(entry.first);
+        return keys;
     }
 
     void print_cache() {

@@ -40,8 +40,12 @@ Code: [ideal_cache.hpp](../include/ideal_cache.hpp), [ideal_cache.cpp](../src/id
 
 ## Multiple cache levels
 
-The runner can combine different policies in a sequence. A request visits levels until it hits. Missed levels add the key, and each level replaces its own entries independently. If every level misses, the system records one memory access. Copies can exist at several levels, and an L1 hit does not update L2.
+The runner combines different policies in an exclusive hierarchy. It probes
+levels without insertion, removes a lower-level hit before promoting it to L1,
+and moves resident victims down. A key has only one resident copy. Ghost history
+in 2Q, ARC and LIRS contains no values and does not count as a resident copy.
 
-This is a layout of several caches, not another replacement policy. It uses the existing `lookup_update` methods and assumes values equal keys.
-
-Code: [cache_hierarchy.hpp](../include/cache_hierarchy.hpp), [cache_hierarchy.cpp](../src/cache_hierarchy.cpp). The older two-level wrapper is in [multilevel_cache.hpp](../include/multilevel_cache.hpp).
+Code: [cache_hierarchy.hpp](../include/cache_hierarchy.hpp),
+[cache_hierarchy.cpp](../src/cache_hierarchy.cpp). The two-level
+[multilevel_cache.hpp](../include/multilevel_cache.hpp) wrapper follows the same rule.
+See [hierarchy.md](hierarchy.md) for configuration.

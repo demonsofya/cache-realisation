@@ -133,7 +133,7 @@ def main():
                 options = ['--distribution', args.distribution]
                 if args.distribution == 'geometric':
                     options += ['--ratio', str(args.ratio)]
-                for mode in ['independent']:
+                for mode in ['exclusive']:
                     stats = run_cache(args.binary.resolve(), configs[tuple(levels)], path,
                                       len(data), bound, options)
                     record('+'.join(levels), mode, stats, args.distribution,

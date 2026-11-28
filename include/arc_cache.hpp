@@ -25,13 +25,18 @@ struct arc_cache_t {
     using B2Iter = typename std::list<KeyT>::iterator;
     std::unordered_map<KeyT, B2Iter> b2_cache_; // if found here t2 should be increased
 
-    void replace(KeyT key) {
+    template <typename OnEvict = ignore_eviction_t>
+    void replace(KeyT key, OnEvict on_evict = {}) {
+        // Promotion can leave a free resident slot.
+        if (t1_counter_.size() + t2_counter_.size() < capacity_)
+            return;
         if (!t1_counter_.empty() &&
             (t1_counter_.size() > p_ ||
              (b2_cache_.find(key) != b2_cache_.end() && t1_counter_.size() == p_))) {
 
             KeyT old_key = t1_counter_.back().first;
 
+            on_evict(old_key);
             t1_cache_.erase(old_key);
             t1_counter_.pop_back();
 
@@ -42,6 +47,7 @@ struct arc_cache_t {
 
             KeyT old_key = t2_counter_.back().first;
 
+            on_evict(old_key);
             t2_cache_.erase(old_key);
             t2_counter_.pop_back();
 
@@ -50,8 +56,8 @@ struct arc_cache_t {
         }
     }
 
-    template <typename F>
-    bool lookup_update(KeyT key, F slow_get_value) {
+    template <typename F, typename OnEvict = ignore_eviction_t>
+    bool lookup_update(KeyT key, F slow_get_value, OnEvict on_evict = {}) {
         if (!capacity_)
             return false;
 
@@ -84,7 +90,7 @@ struct arc_cache_t {
 
             p_ = std::min(capacity_, p_ + delta);
 
-            replace(key);
+            replace(key, on_evict);
 
             b1_counter_.erase(b1_iter->second);
             b1_cache_.erase(b1_iter);
@@ -104,7 +110,7 @@ struct arc_cache_t {
 
             p_ = (delta > p_) ? 0 : p_ - delta;
 
-            replace(key);
+            replace(key, on_evict);
 
             b2_counter_.erase(b2_iter->second);
             b2_cache_.erase(b2_iter);
@@ -130,12 +136,13 @@ struct arc_cache_t {
                     b1_counter_.pop_back();
                 }
 
-                replace(key);
+                replace(key, on_evict);
             }
 
             else { // if b1 is empty only t1 should be changed
                 KeyT old_key = t1_counter_.back().first;
 
+                on_evict(old_key);
                 t1_cache_.erase(old_key);
                 t1_counter_.pop_back();
             }
@@ -151,7 +158,7 @@ struct arc_cache_t {
                     b2_counter_.pop_back();
                 }
 
-                replace(key);
+                replace(key, on_evict);
             }
         }
         T value = slow_get_value(key);
@@ -160,6 +167,36 @@ struct arc_cache_t {
         t1_cache_[key] = t1_counter_.begin();
 
         return false;
+    }
+
+    size_t capacity() const { return capacity_; }
+
+    bool contains(KeyT key) const {
+        return t1_cache_.contains(key) || t2_cache_.contains(key);
+    }
+
+    bool erase(KeyT key) {
+        auto t1 = t1_cache_.find(key);
+        if (t1 != t1_cache_.end()) {
+            t1_counter_.erase(t1->second);
+            t1_cache_.erase(t1);
+            return true;
+        }
+        auto t2 = t2_cache_.find(key);
+        if (t2 == t2_cache_.end())
+            return false;
+        t2_counter_.erase(t2->second);
+        t2_cache_.erase(t2);
+        return true;
+    }
+
+    std::vector<KeyT> resident_keys() const {
+        std::vector<KeyT> keys;
+        for (const auto &entry : t1_cache_)
+            keys.push_back(entry.first);
+        for (const auto &entry : t2_cache_)
+            keys.push_back(entry.first);
+        return keys;
     }
 
     void print_cache() {

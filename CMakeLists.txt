@@ -52,6 +52,7 @@ if(BUILD_TESTING)
         test/twoq_tests.cpp
         test/arc_tests.cpp
         test/ideal_tests.cpp
+        test/hierarchy_tests.cpp
         test/config_tests.cpp
     )
     target_link_libraries(cache_tests PRIVATE cache_core GTest::gtest_main Threads::Threads)

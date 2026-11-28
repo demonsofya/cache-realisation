@@ -26,8 +26,33 @@ capacity remains supported for boundary tests. Arithmetic overflow is rejected.
 ./build/cache_runner configs/three_levels.cfg requests/comparison/PopularitySkewWithLongTail_24.txt --sizes 2,6,16 --json
 ```
 
-Levels still operate independently and can contain duplicate resident keys.
-Exclusive placement is not part of this update.
+## Exclusive placement
+
+Every resident key belongs to at most one level. This is now the only hierarchy
+scheme; no extra command-line flag is needed.
+
+1. Probe levels without inserting into missed levels.
+2. On an L1 hit, update its replacement state and stop.
+3. On a lower-level hit, erase the source entry before inserting it into L1.
+4. On a full miss, count one memory access and insert into L1.
+5. Move each insertion's resident victim to the next level, continuing until a
+   free slot is found or a victim leaves the last level.
+
+Transfers do not increment hit or miss counters. A lower-level hit is still one
+hierarchy hit, even if promotion causes several transfers. Ghost keys in 2Q, ARC
+and LIRS contain no values; they are metadata, not duplicate resident entries.
+Each destination uses its local admission rules. LFU frequency is not transferred.
+
+For LRU levels of sizes 1 and 2 and input `3 6 1 2 3 1 2 3`, the result is 3 hits
+and 3 misses. All three slots hold different keys.
+
+`contains`, `erase`, an optional eviction callback in `lookup_update` and
+`resident_keys` extend each policy's API. The old two-argument lookup call remains
+valid. ARC and LIRS account for holes left by promotion before choosing a victim.
+
+The old two-level wrapper also uses exclusive placement. Its supplied caches must
+be initially empty and accessed only through the wrapper. The simulator represents
+values using keys; it does not transfer general data payloads.
 
 ## Why configurable growth
 

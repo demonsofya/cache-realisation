@@ -10,8 +10,8 @@ struct twoq_cache_t {
           kout_(capacity == 0 ? 0 : std::max<size_t>(1, capacity / 2)), // kout ~ 50% capacity
           am_cache_(capacity) {}
 
-    template <typename F>
-    bool lookup_update(KeyT key, F slow_get_value) {
+    template <typename F, typename OnEvict = ignore_eviction_t>
+    bool lookup_update(KeyT key, F slow_get_value, OnEvict on_evict = {}) {
         if (capacity_ == 0)
             return false;
 
@@ -31,7 +31,7 @@ struct twoq_cache_t {
             a1out_counter_.erase(a1out_iter->second);
             a1out_cache_.erase(a1out_iter);
 
-            reclaim();
+            reclaim(on_evict);
 
             am_cache_.lookup_update(key, slow_get_value);
             size_++;
@@ -40,7 +40,7 @@ struct twoq_cache_t {
 
         T value = slow_get_value(key);
 
-        reclaim();
+        reclaim(on_evict);
 
         a1in_counter_.emplace_front(std::make_pair(key, value));
         a1in_cache_[key] = a1in_counter_.begin();
@@ -52,7 +52,8 @@ struct twoq_cache_t {
         return false;
     }
 
-    void reclaim() {
+    template <typename OnEvict = ignore_eviction_t>
+    void reclaim(OnEvict on_evict = {}) {
         if (size_ < capacity_)
             return;
 
@@ -60,6 +61,7 @@ struct twoq_cache_t {
 
             KeyT old_key = a1in_counter_.back().first;
 
+            on_evict(old_key);
             a1in_cache_.erase(old_key);
             a1in_counter_.pop_back();
 
@@ -75,6 +77,7 @@ struct twoq_cache_t {
 
         } else {
             if (!(am_cache_.counter_.empty())) {
+                on_evict(am_cache_.counter_.back().first);
                 am_cache_.cache_.erase(am_cache_.counter_.back().first);
                 am_cache_.counter_.pop_back();
                 am_cache_.size_--;
@@ -82,6 +85,33 @@ struct twoq_cache_t {
         }
 
         size_--;
+    }
+
+    size_t capacity() const { return capacity_; }
+
+    bool contains(KeyT key) const {
+        return a1in_cache_.contains(key) || am_cache_.contains(key);
+    }
+
+    bool erase(KeyT key) {
+        auto it = a1in_cache_.find(key);
+        if (it != a1in_cache_.end()) {
+            a1in_counter_.erase(it->second);
+            a1in_cache_.erase(it);
+        } else if (!am_cache_.erase(key)) {
+            return false;
+        }
+        size_--;
+        return true;
+    }
+
+    std::vector<KeyT> resident_keys() const {
+        std::vector<KeyT> keys;
+        for (const auto &entry : a1in_cache_)
+            keys.push_back(entry.first);
+        for (const auto &entry : am_cache_.cache_)
+            keys.push_back(entry.first);
+        return keys;
     }
 
     void print_cache() {
