@@ -28,20 +28,16 @@ size_t run_cache(size_t capacity, const std::vector<int> &data) {
     return hits;
 }
 
-// FIXME: if you look in the gtest documentation, you'll see that neither fixture name nor test name
-// may contain underscores (https://google.github.io/googletest/reference/testing.html)
 template <typename T>
-class common_cache_test_t : public testing::Test {};
+class CommonCacheTest : public testing::Test {};
 
 using CacheTypes =
     testing::Types<lru_cache_t<int, int>, lfu_cache_t<int, int>, twoq_cache_t<int, int>,
                    arc_cache_t<int, int>, lirs_cache_t<int, int>>;
 
-// I cant use TYPED_TEST_SUITE because my comliler somewhy use old version of googletest and i don't
-// know how to solve this
-TYPED_TEST_SUITE(common_cache_test_t, CacheTypes);
+TYPED_TEST_SUITE(CommonCacheTest, CacheTypes);
 
-TYPED_TEST(common_cache_test_t, CommonTests) {
+TYPED_TEST(CommonCacheTest, CommonTests) {
 
     const std::vector<cache_test_case_t> common_tests{
         {"zero capacity", 0, {1, 1, 1}, 0},
@@ -73,7 +69,7 @@ TYPED_TEST(common_cache_test_t, CommonTests) {
     }
 }
 
-TYPED_TEST(common_cache_test_t, LongUniqueSequence) {
+TYPED_TEST(CommonCacheTest, LongUniqueSequence) {
     TypeParam cache(10);
 
     size_t hits = 0;
@@ -85,7 +81,7 @@ TYPED_TEST(common_cache_test_t, LongUniqueSequence) {
     EXPECT_EQ(hits, 0);
 }
 
-TYPED_TEST(common_cache_test_t, LongRepeatedElement) {
+TYPED_TEST(CommonCacheTest, LongRepeatedElement) {
     TypeParam cache(10);
 
     size_t hits = 0;
@@ -97,7 +93,7 @@ TYPED_TEST(common_cache_test_t, LongRepeatedElement) {
     EXPECT_EQ(hits, 999);
 }
 
-TYPED_TEST(common_cache_test_t, SmallCapacities) {
+TYPED_TEST(CommonCacheTest, SmallCapacities) {
     for (size_t capacity = 1; capacity <= 5; capacity++) {
         TypeParam cache(capacity);
 

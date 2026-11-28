@@ -6,7 +6,7 @@
 /*
  * ARC specific tests
  */
-TEST(arc_cache_test_t, NewElementGoesToT1) {
+TEST(ArcCacheTest, NewElementGoesToT1) {
     arc_cache_t<int, int> cache(4);
 
     EXPECT_FALSE(cache.lookup_update(1, slow_get_value));
@@ -16,7 +16,7 @@ TEST(arc_cache_test_t, NewElementGoesToT1) {
     EXPECT_TRUE(cache.t2_cache_.find(1) == cache.t2_cache_.end());
 }
 
-TEST(arc_cache_test_t, ElementMovesFromT1ToT2) {
+TEST(ArcCacheTest, ElementMovesFromT1ToT2) {
     arc_cache_t<int, int> cache(4);
 
     cache.lookup_update(1, slow_get_value);
@@ -30,7 +30,7 @@ TEST(arc_cache_test_t, ElementMovesFromT1ToT2) {
     EXPECT_TRUE(cache.t2_cache_.find(1) != cache.t2_cache_.end());
 }
 
-TEST(arc_cache_test_t, HitInT2StaysInT2) {
+TEST(ArcCacheTest, HitInT2StaysInT2) {
     arc_cache_t<int, int> cache(4);
 
     cache.lookup_update(1, slow_get_value);
@@ -43,7 +43,7 @@ TEST(arc_cache_test_t, HitInT2StaysInT2) {
     EXPECT_TRUE(cache.t2_cache_.find(1) != cache.t2_cache_.end());
 }
 
-TEST(arc_cache_test_t, T1EvictionGoesToB1) {
+TEST(ArcCacheTest, T1EvictionGoesToB1) {
     arc_cache_t<int, int> cache(2);
 
     cache.lookup_update(1, slow_get_value);
@@ -56,7 +56,7 @@ TEST(arc_cache_test_t, T1EvictionGoesToB1) {
     EXPECT_TRUE(cache.b1_cache_.find(2) != cache.b1_cache_.end());
 }
 
-TEST(arc_cache_test_t, B1HitIncreasesP) {
+TEST(ArcCacheTest, B1HitIncreasesP) {
     arc_cache_t<int, int> cache(2);
 
     cache.lookup_update(1, slow_get_value);
@@ -75,7 +75,7 @@ TEST(arc_cache_test_t, B1HitIncreasesP) {
     EXPECT_TRUE(cache.t2_cache_.find(2) != cache.t2_cache_.end());
 }
 
-TEST(arc_cache_test_t, B2HitDecreasesP) {
+TEST(ArcCacheTest, B2HitDecreasesP) {
     arc_cache_t<int, int> cache(2);
 
     cache.lookup_update(1, slow_get_value);
@@ -97,7 +97,7 @@ TEST(arc_cache_test_t, B2HitDecreasesP) {
     EXPECT_TRUE(cache.t2_cache_.find(1) != cache.t2_cache_.end());
 }
 
-TEST(arc_cache_test_t, ResidentSizeDoesNotExceedCapacity) {
+TEST(ArcCacheTest, ResidentSizeDoesNotExceedCapacity) {
     arc_cache_t<int, int> cache(4);
 
     for (int key = 0; key < 100; key++) {
@@ -107,7 +107,7 @@ TEST(arc_cache_test_t, ResidentSizeDoesNotExceedCapacity) {
     }
 }
 
-TEST(arc_cache_test_t, WholeSizeDoesNotExceedDoubleCapacity) {
+TEST(ArcCacheTest, WholeSizeDoesNotExceedDoubleCapacity) {
     arc_cache_t<int, int> cache(4);
 
     for (int key = 0; key < 100; key++) {
@@ -119,7 +119,7 @@ TEST(arc_cache_test_t, WholeSizeDoesNotExceedDoubleCapacity) {
     }
 }
 
-TEST(arc_cache_test_t, PDoesNotExceedCapacity) {
+TEST(ArcCacheTest, PDoesNotExceedCapacity) {
     arc_cache_t<int, int> cache(4);
 
     for (int i = 0; i < 100; i++) {

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#Run every config against every request file and optionally save a CSV table.
+"""Run each config against each request file and optionally save a CSV table."""
 
 import argparse
 import csv
@@ -37,7 +37,19 @@ def main():
         help='CSV separator (default: semicolon for regional Excel settings)'
     )
 
+    parser.add_argument('--distribution', choices=['equal', 'linear', 'geometric'], default='geometric')
+    parser.add_argument('--ratio', type=int, default=2, help='Geometric factor, at least 2')
+    parser.add_argument('--sizes', help='Exact comma-separated capacities, instead of a distribution')
     args = parser.parse_args()
+    if args.ratio < 2:
+        parser.error('--ratio must be at least 2')
+    options = []
+    if args.sizes:
+        options += ['--sizes', args.sizes]
+    else:
+        options += ['--distribution', args.distribution]
+        if args.distribution == 'geometric':
+            options += ['--ratio', str(args.ratio)]
     rows = []
 
     for request in args.requests:
@@ -47,7 +59,7 @@ def main():
                     str(args.binary.resolve()),
                     str(config),
                     str(request),
-                    '--json'
+                    '--json', *options
                 ],
                 text=True,
                 capture_output=True,
@@ -59,6 +71,10 @@ def main():
             rows.append({
                 'requests_file': str(request),
                 'config': str(config),
+                'mode': 'independent',
+                'distribution': 'explicit' if args.sizes else args.distribution,
+                'ratio': args.ratio if not args.sizes and args.distribution == 'geometric' else '',
+                'level_sizes': ' / '.join(str(level['capacity']) for level in stats['levels']),
                 'capacity': sum(
                     level['capacity'] for level in stats['levels']
                 ),

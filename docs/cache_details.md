@@ -163,7 +163,7 @@ The adapter returns the key as its value. This allows a missed upper level to in
 
 Copies may exist at multiple levels. There is no strict inclusion rule, no exclusive placement rule, and no automatic transfer of evicted objects to lower levels. L1 hits do not update L2 frequency or recency.
 
-The runner distributes total capacity with weights 1..N. The last level receives the rounding remainder. A zero-size level passes every request on.
+The runner supports equal, linear and geometric weights, plus explicit sizes. The last level receives the rounding remainder. Multi-level allocations with an empty level are rejected. See [hierarchy settings](hierarchy.md).
 
 The older [multilevel_cache_t](../include/multilevel_cache.hpp), used by the demo, instead holds references to exactly two caches and chains their loaders. It requires L1 capacity to be smaller than L2. The runner uses the dynamic hierarchy, not this wrapper.
 

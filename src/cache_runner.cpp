@@ -1,4 +1,7 @@
 #include "cache_hierarchy.hpp"
+#include "cache_config.hpp"
+
+#include <CLI/CLI.hpp>
 
 #include <charconv>
 #include <fstream>
@@ -63,33 +66,6 @@ std::vector<std::string> read_config(const std::string &path) {
     return policies;
 }
 
-std::vector<cache_level_config_t> make_levels(const std::vector<std::string> &policies,
-                                             size_t capacity) {
-    const size_t maximum = std::numeric_limits<size_t>::max();
-    size_t weight_sum = 0;
-    for (size_t i = 0; i < policies.size(); i++) {
-        if (maximum - weight_sum < i + 1)
-            throw std::overflow_error("Too many levels");
-        weight_sum += i + 1;
-    }
-
-    std::vector<cache_level_config_t> levels;
-    size_t remaining = capacity;
-    for (size_t i = 0; i < policies.size(); i++) {
-        size_t level_capacity = remaining;
-        if (i + 1 != policies.size()) {
-            const size_t remainder = capacity % weight_sum;
-            if (remainder > maximum / (i + 1))
-                throw std::overflow_error("Capacity distribution overflow");
-            level_capacity = (capacity / weight_sum) * (i + 1)
-                           + remainder * (i + 1) / weight_sum;
-        }
-        levels.push_back({policies[i], level_capacity});
-        remaining -= level_capacity;
-    }
-    return levels;
-}
-
 void run_requests(std::istream &input, cache_hierarchy_t &cache, size_t count) {
     for (size_t i = 0; i < count; i++)
         cache.lookup_update(read_number(input, "request key"));
@@ -121,30 +97,37 @@ void print_results(const cache_hierarchy_t &cache, bool json) {
 } // namespace
 
 int main(int argc, char **argv) {
-    if (argc < 2 || argc > 4) {
-        std::cerr << "Usage: cache_runner CONFIG [REQUESTS] [--json]\n";
-        return 1;
-    }
+    CLI::App app{"Compare cache policies with configurable level sizes"};
+    std::string config_path, request_path, distribution = "geometric";
+    std::vector<size_t> sizes;
+    size_t ratio = 2;
+    bool json = false;
+    app.add_option("config", config_path, "Config: level count followed by policies")
+        ->required()->check(CLI::ExistingFile);
+    app.add_option("requests", request_path, "Input: total capacity, request count, keys; omit for stdin")
+        ->check(CLI::ExistingFile);
+    app.add_flag("--json", json, "Print totals and per-level statistics as JSON");
+    auto *distribution_option = app.add_option("--distribution", distribution,
+        "Capacity weights: equal, linear, geometric (default: geometric)")
+        ->check(CLI::IsMember({"equal", "linear", "geometric"}));
+    auto *ratio_option = app.add_option("--ratio", ratio, "Integer geometric growth factor (default: 2)")
+        ->check(CLI::PositiveNumber);
+    app.add_option("--sizes", sizes, "Exact capacities, comma-separated; sum must match input capacity")
+        ->delimiter(',')->expected(1, -1)->check(CLI::NonNegativeNumber)
+        ->excludes(distribution_option)->excludes(ratio_option);
+    CLI11_PARSE(app, argc, argv);
+
     try {
-        bool json = false;
-        std::string request_path;
-        for (int i = 2; i < argc; i++) {
-            const std::string argument = argv[i];
-            if (argument == "--json" && !json)
-                json = true;
-            else if (request_path.empty() && !argument.starts_with("--"))
-                request_path = argument;
-            else
-                throw std::invalid_argument("Invalid command line argument: " + argument);
-        }
-        const auto policies = read_config(argv[1]);
+        if (ratio_option->count() && distribution != "geometric")
+            throw std::invalid_argument("--ratio requires geometric distribution");
+        const auto policies = read_config(config_path);
         std::ifstream request_file;
         if (!request_path.empty())
             request_file = open_file(request_path);
         std::istream &input = request_path.empty() ? std::cin : request_file;
         const size_t capacity = read_number(input, "cache capacity");
         const size_t count = read_number(input, "request count");
-        cache_hierarchy_t cache(make_levels(policies, capacity));
+        cache_hierarchy_t cache(make_levels(policies, capacity, distribution, ratio, sizes));
         run_requests(input, cache, count);
         print_results(cache, json);
     } catch (const std::exception &error) {

@@ -6,20 +6,19 @@
 /*
  * 2Q specific tests
  */
-TEST(twoq_cache_test_t, ElementStaysInA1inOnHit) {
+TEST(TwoQCacheTest, ElementStaysInA1inOnHit) {
     twoq_cache_t<int, int> cache(4);
 
     EXPECT_FALSE(cache.lookup_update(1, slow_get_value));
 
     EXPECT_TRUE(cache.lookup_update(1, slow_get_value));
 
-    // FIXME: seems like here you access members meant to be private
     EXPECT_TRUE(cache.a1in_cache_.find(1) != cache.a1in_cache_.end());
 
     EXPECT_TRUE(cache.am_cache_.cache_.find(1) == cache.am_cache_.cache_.end());
 }
 
-TEST(twoq_cache_test_t, ElementMovesFromA1inToA1out) {
+TEST(TwoQCacheTest, ElementMovesFromA1inToA1out) {
     twoq_cache_t<int, int> cache(4);
 
     cache.lookup_update(1, slow_get_value);
@@ -33,7 +32,7 @@ TEST(twoq_cache_test_t, ElementMovesFromA1inToA1out) {
     EXPECT_TRUE(cache.a1in_cache_.find(1) == cache.a1in_cache_.end());
 }
 
-TEST(twoq_cache_test_t, ElementMovesFromA1outToAm) {
+TEST(TwoQCacheTest, ElementMovesFromA1outToAm) {
     twoq_cache_t<int, int> cache(4);
 
     cache.lookup_update(1, slow_get_value);
@@ -51,7 +50,7 @@ TEST(twoq_cache_test_t, ElementMovesFromA1outToAm) {
     EXPECT_TRUE(cache.am_cache_.cache_.find(1) != cache.am_cache_.cache_.end());
 }
 
-TEST(twoq_cache_test_t, A1outDoesNotContainValues) {
+TEST(TwoQCacheTest, A1outDoesNotContainValues) {
     twoq_cache_t<int, int> cache(4);
 
     cache.lookup_update(1, slow_get_value);
@@ -63,7 +62,7 @@ TEST(twoq_cache_test_t, A1outDoesNotContainValues) {
     EXPECT_LE(cache.a1out_counter_.size(), cache.kout_);
 }
 
-TEST(twoq_cache_test_t, ResidentSizeDoesNotExceedCapacity) {
+TEST(TwoQCacheTest, ResidentSizeDoesNotExceedCapacity) {
     twoq_cache_t<int, int> cache(4);
 
     for (int key = 0; key < 100; key++) {

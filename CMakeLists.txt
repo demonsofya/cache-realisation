@@ -2,49 +2,66 @@ cmake_minimum_required(VERSION 3.20)
 project(cache LANGUAGES CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-find_package(Threads REQUIRED)
-find_package(GTest 1.14 CONFIG REQUIRED)
+include(CTest)
+include(FetchContent)
+option(CACHE_FETCH_DEPENDENCIES "Download missing CLI11 and GoogleTest packages" ON)
 
-# FIXME: instead of writing target_include_directories twice you may create an interface library
-# out of all you headers and then link with it twice.
-# https://cmake.org/cmake/help/latest/command/add_library.html#interface-libraries
+find_package(CLI11 2.4 CONFIG QUIET)
+if(NOT CLI11_FOUND)
+    if(NOT CACHE_FETCH_DEPENDENCIES)
+        message(FATAL_ERROR "CLI11 is required; install it or enable CACHE_FETCH_DEPENDENCIES")
+    endif()
+    FetchContent_Declare(CLI11
+        GIT_REPOSITORY https://github.com/CLIUtils/CLI11.git
+        GIT_TAG 6c7b07a878ad834957b98d0f9ce1dbe0cb204fc9
+    )
+    FetchContent_MakeAvailable(CLI11)
+endif()
+
 add_library(cache_headers INTERFACE)
-target_include_directories(cache_headers INTERFACE "include")
+target_include_directories(cache_headers INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
-add_executable(cache src/ideal_cache.cpp src/cache.cpp)
-target_link_libraries(cache PRIVATE cache_headers)
+add_library(cache_core src/cache_hierarchy.cpp src/cache_config.cpp src/ideal_cache.cpp)
+target_link_libraries(cache_core PUBLIC cache_headers)
 
-add_executable(cache_runner src/cache_runner.cpp src/cache_hierarchy.cpp)
-target_link_libraries(cache_runner PRIVATE cache_headers)
+add_executable(cache_runner src/cache_runner.cpp)
+target_link_libraries(cache_runner PRIVATE cache_core CLI11::CLI11)
 
-add_executable(cache_tests
-    test/common_tests.cpp
-    test/twoq_tests.cpp
-    test/arc_tests.cpp
-    test/ideal_tests.cpp
-    src/ideal_cache.cpp
-)
+add_executable(cache src/cache.cpp)
+target_link_libraries(cache PRIVATE cache_core)
 
-target_link_libraries(cache_tests PRIVATE
-    cache_headers
-    GTest::gtest_main
-    Threads::Threads
-)
+if(BUILD_TESTING)
+    find_package(Threads REQUIRED)
+    find_package(GTest 1.14 CONFIG QUIET)
+    if(NOT GTest_FOUND)
+        if(NOT CACHE_FETCH_DEPENDENCIES)
+            message(FATAL_ERROR "GoogleTest is required for tests; install it or disable BUILD_TESTING")
+        endif()
+        FetchContent_Declare(googletest
+            GIT_REPOSITORY https://github.com/google/googletest.git
+            GIT_TAG f8d7d77c06936315286eb55f8de22cd23c188571
+        )
+        FetchContent_MakeAvailable(googletest)
+    endif()
+    add_executable(cache_tests
+        test/common_tests.cpp
+        test/twoq_tests.cpp
+        test/arc_tests.cpp
+        test/ideal_tests.cpp
+        test/config_tests.cpp
+    )
+    target_link_libraries(cache_tests PRIVATE cache_core GTest::gtest_main Threads::Threads)
+    include(GoogleTest)
+    gtest_discover_tests(cache_tests)
 
-enable_testing()
-
-# FIXME: why not use gtest_discover_tests? Now when you run ctest you see only one test passing, but
-# in fact there are many
-
-include(GoogleTest)
-gtest_discover_tests(cache_tests)
-
-message(STATUS "GoogleTest version: ${GTest_VERSION}")
-message(STATUS "GoogleTest config: ${GTest_DIR}")
-
-get_target_property(GTEST_INCLUDE_PATHS GTest::gtest INTERFACE_INCLUDE_DIRECTORIES)
-message(STATUS "GoogleTest headers: ${GTEST_INCLUDE_PATHS}")
+    find_package(Python3 COMPONENTS Interpreter)
+    if(Python3_Interpreter_FOUND)
+        add_test(NAME RunnerIntegration
+            COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/scripts/test_cache_runner.py"
+                    --binary $<TARGET_FILE:cache_runner>)
+    endif()
+endif()

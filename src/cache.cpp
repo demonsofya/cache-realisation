@@ -1,6 +1,4 @@
-// FIXME: what is the purpose of this file?
 
-// FIXME: some of the included headers are not used
 #include <cctype>
 #include <cstddef>
 #include <iostream>
@@ -19,7 +17,6 @@ size_t slow_get_value(KeyT key) {
     return key; // cause its not really important how does testing work
 }
 
-// FIXME: add function try catch block on main
 int main() {
     size_t cache_sz = 0, data_count = 0;
     if (!(std::cin >> cache_sz >> data_count))
@@ -30,7 +27,6 @@ int main() {
         if (!(std::cin >> key))
             return 1;
     }
-    // FIXME: check std::cin.fail()
 
     size_t hits_ideal = ideal_cache_hits(data, cache_sz);
 

@@ -7,12 +7,13 @@
 These results were run again from GitHub commit `8d147bb2a0cd85d7b0bb9c708c190fb93a5bead6` during the documentation review on 20 November 2026.
 
 ```bash
-python3 scripts/build.py
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
 python3 scripts/test_cache_runner.py
 python3 scripts/compare_caches.py --csv results/cache_comparison.csv
 ```
 
-The runner built with g++ and all eight Python integration tests passed. The comparison completed 24 runs across 22 named scenarios and produced 165 policy rows. CMake and GoogleTest were not run in this environment because CMake was not installed. The current CMake source list was checked and the previously removed comparison file is no longer listed.
+The runner built with g++ and all eight Python integration tests passed. The comparison completed 24 runs across 22 named scenarios and produced 165 policy rows. These historical results use the independent hierarchy; its placement rules are unchanged.
 
 Each run starts empty. Cold misses are included. Objects have equal size, values equal keys, and requests are reads only. Capacity C is measured in objects. The five online caches each receive C slots. L1+L2 receives C/3 slots for LRU (rounded down) and the rest for LFU; the two-level run is skipped when L1 would be empty.
 
